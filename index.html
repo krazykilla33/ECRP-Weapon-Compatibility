@@ -6,6 +6,7 @@
 <title>Weapon Compatibility Explorer</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
+/* Theme */
 :root {
   --bg: #08111f;
   --bg2: #0d1729;
@@ -46,9 +47,6 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
-.hero {
-  display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; margin-bottom:16px;
-}
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -56,25 +54,14 @@ body {
   box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
 }
-.hero-main { padding: 26px; }
 .badge {
   display:inline-flex; align-items:center; gap:8px;
   padding:8px 12px; border-radius:999px;
   border:1px solid rgba(56,189,248,.22); background: rgba(56,189,248,.09);
   color:#cceeff; font-size:12px; text-transform:uppercase; letter-spacing:.05em;
 }
-h1 { margin: 14px 0 10px; font-size: clamp(2rem, 4vw, 3.15rem); line-height:1.04; letter-spacing:-.03em; }
 p { color: var(--muted); line-height:1.6; }
-.stats { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; padding:16px; }
-.stat { background: var(--panel2); border:1px solid var(--border); border-radius:18px; padding:15px; }
-.stat .k { font-size:.82rem; color:var(--muted); margin-bottom:8px; }
-.stat .v { font-size:1.75rem; font-weight:700; letter-spacing:-.03em; }
-.grid > .panel.section:first-child {
-  display: flex;
-  flex-direction: column;
-}
-
-.grid { display:grid; grid-template-columns: 360px 1fr 340px; gap:16px; }
+h1 { margin: 0; line-height: 1.05; letter-spacing: -.03em; }
 .section { padding:18px; }
 .panel.section { min-height: 0; }
 .section h2 { margin:0 0 10px; font-size:1rem; }
@@ -131,33 +118,47 @@ button.secondary {
   background: linear-gradient(180deg, rgba(18,33,58,.94), rgba(10,21,40,.96));
   box-shadow: inset 0 0 0 1px rgba(34,211,238,.14);
 }
+
+@keyframes selectedCardFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34,211,238,.0), inset 0 0 0 1px rgba(34,211,238,.14);
+    border-color: rgba(34,211,238,.48);
+  }
+  30% {
+    box-shadow: 0 0 0 6px rgba(34,211,238,.08), inset 0 0 0 1px rgba(34,211,238,.20);
+    border-color: rgba(34,211,238,.8);
+  }
+  100% {
+    box-shadow: inset 0 0 0 1px rgba(34,211,238,.14);
+    border-color: rgba(34,211,238,.48);
+  }
+}
+
+.weapon-card.flash-selected {
+  animation: selectedCardFlash 0.9s ease;
+}
 .block {
   margin-top:16px; padding:16px; border-radius:18px;
   background:rgba(15, 23, 42, .72); border:1px solid var(--border);
 }
 .block h3 { margin:0 0 12px; font-size:.95rem; }
 .chips { display:flex; flex-wrap:wrap; gap:8px; }
-.ammo-list { display:grid; gap:8px; }
 .ammo-item {
   display:flex; justify-content:space-between; gap:8px; align-items:center;
   border-radius:16px; border:1px solid var(--border); background:rgba(15,23,42,.72);
   padding:12px 14px; cursor:pointer;
 }
-.ammo-item.active, .ammo-item:hover { border-color:rgba(52,211,153,.4); }
 .count {
   color:#ccffe8; background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.22);
   border-radius:999px; padding:4px 9px; font-size:.78rem;
 }
 .tiny { font-size:.82rem; color:var(--muted); }
-.source-grid { display:grid; gap:8px; }
-.two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size:.8rem; color:#dbeafe; background:rgba(0,0,0,.2); padding:10px 12px; border-radius:12px; overflow:auto;
 }
-.success { color:#c7f9df; }
-.warn { color:#ffe6a7; }
 
+/* Layout */
 .hero-simple {
   display:grid;
   grid-template-columns: 1.2fr .9fr;
@@ -175,10 +176,6 @@ button.secondary {
   margin:0;
   max-width:720px;
 }
-.stats-simple {
-  padding:0;
-  align-self:center;
-}
 .grid > .panel.section:first-child {
   display: flex;
   flex-direction: column;
@@ -190,9 +187,6 @@ button.secondary {
   gap: 14px;
   flex: 1;
   min-height: 0;
-}
-.ammo-section-full {
-  padding:18px;
 }
 .weapon-list {
   display: grid;
@@ -251,40 +245,324 @@ button.secondary {
   color:var(--muted);
   background:rgba(255,255,255,.02);
 }
-@media (max-width:1100px) {
-  .hero-simple, .grid > .panel.section:first-child {
-  display: flex;
-  flex-direction: column;
-}
-
-.grid { grid-template-columns:1fr; }
-  .weapon-list {
-  display: grid;
-  gap: 8px;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-  margin-top: 6px;
-}
-}
 @media (max-width:700px) {
   .simple-list { grid-template-columns:1fr; }
 }
 
-@media (max-width:1100px) {
-  .hero, .grid > .panel.section:first-child {
-  display: flex;
-  flex-direction: column;
-}
-
-.grid { grid-template-columns:1fr; }
-  .stats { grid-template-columns:repeat(2,1fr); }
-}
 @media (max-width:700px) {
   .wrap { padding:16px; }
   .stats { grid-template-columns:1fr; }
-  .two { grid-template-columns:1fr; }
+  }
+
+/* Mobile filters */
+.mobile-filters-toggle {
+  display: none;
+  margin-bottom: 10px;
 }
+
+@media (max-width: 600px) {
+  /* Mobile filters */
+.mobile-filters-toggle {
+    display: block;
+  }
+
+  .controls.collapsed {
+    display: none;
+  }
+}
+
+/* Responsive rules */
+h1 {
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+}
+
+.details-title {
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+}
+
+.pill,
+.simple-item,
+.weapon-card,
+input,
+select {
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  html, body {
+    overflow: auto;
+    height: auto;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  .wrap {
+    height: auto;
+    overflow: visible;
+    padding: 14px;
+  }
+
+  /* Layout */
+.hero-simple {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  
+  .grid {
+    grid-template-columns: 1fr;
+    flex: none;
+    gap: 12px;
+  }
+
+  .grid > .panel.section:first-child {
+    display: block;
+  }
+
+  .panel.section {
+    min-height: auto;
+  }
+
+  .weapon-list {
+    max-height: none;
+    overflow: visible;
+    flex: none;
+    margin-top: 8px;
+  }
+
+  .section {
+    padding: 14px;
+  }
+
+  .details-hero {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .wrap {
+    padding: 10px;
+  }
+
+  /* Layout */
+.hero-simple {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .hero-copy p {
+    font-size: .95rem;
+  }
+
+  
+  
+  
+  .section {
+    padding: 12px;
+  }
+
+  .controls {
+    gap: 8px;
+  }
+
+  input, select {
+    padding: 9px 11px;
+    font-size: .92rem;
+  }
+
+  .weapon-card {
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  .weapon-title {
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  .meta {
+    gap: 6px;
+    font-size: .8rem;
+  }
+
+  .pill {
+    padding: 6px 9px;
+    font-size: .78rem;
+  }
+
+  .block {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .simple-list {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .simple-item {
+    padding: 7px 9px;
+    font-size: .8rem;
+  }
+
+  .details-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .chips {
+    gap: 6px;
+  }
+
+  .empty-state {
+    padding: 12px;
+  }
+}
+
+/* Short desktop windows: allow full page scrolling */
+@media (max-height: 820px) and (min-width: 901px) {
+  html, body {
+    overflow: auto;
+    height: auto;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  .wrap {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .grid {
+    flex: none;
+    min-height: auto;
+    align-items: start;
+  }
+
+  .panel.section {
+    min-height: auto;
+  }
+
+  .weapon-list {
+    max-height: 50vh;
+    overflow-y: auto;
+    flex: none;
+  }
+}
+
+
+/* Compact reference-style header */
+.hero-simple {
+  padding: 12px 16px;
+  gap: 10px;
+}
+
+.hero-copy h1 {
+  font-size: clamp(1.15rem, 2vw, 1.85rem);
+  margin: 0 0 4px;
+}
+
+.hero-copy p {
+  font-size: .9rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+
+
+
+
+@media (max-width: 900px) {
+  .hero-simple {
+    padding: 12px 14px;
+  }
+
+  }
+
+@media (max-width: 600px) {
+  .hero-copy h1 {
+    font-size: 1.05rem;
+  }
+
+  .hero-copy p {
+    font-size: .85rem;
+  }
+
+  
+  }
+
+
+/* Compact top summary chips */
+.hero-simple {
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.stats-inline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  align-self: start;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(16, 27, 48, .92);
+  border: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.stat-chip-label {
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1;
+}
+
+.stat-chip-value {
+  font-size: .9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (max-width: 900px) {
+  .hero-simple {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-inline {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .stat-chip {
+    padding: 6px 9px;
+    gap: 6px;
+  }
+
+  .stat-chip-label {
+    font-size: .74rem;
+  }
+
+  .stat-chip-value {
+    font-size: .84rem;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -295,10 +573,10 @@ button.secondary {
       <h1>Weapon Compatibility Explorer</h1>
       <p>Search for a weapon, filter by ammo or attachment, and browse compatibility details.</p>
     </div>
-    <div class="stats stats-simple">
-      <div class="stat"><div class="k">Weapons</div><div class="v" id="statWeapons">0</div></div>
-      <div class="stat"><div class="k">Ammo Types</div><div class="v" id="statAmmo">0</div></div>
-      <div class="stat"><div class="k">Attachment Types</div><div class="v" id="statAttachments">0</div></div>
+    <div class="stats-inline" aria-label="Summary stats">
+      <div class="stat-chip"><span class="stat-chip-label">Weapons</span><span class="stat-chip-value" id="statWeapons">0</span></div>
+      <div class="stat-chip"><span class="stat-chip-label">Ammo Types</span><span class="stat-chip-value" id="statAmmo">0</span></div>
+      <div class="stat-chip"><span class="stat-chip-label">Attachment Types</span><span class="stat-chip-value" id="statAttachments">0</span></div>
     </div>
   </div>
 
@@ -306,7 +584,8 @@ button.secondary {
   <div class="grid">
     <div class="panel section">
       <h2>Find a Weapon</h2>
-      <div class="controls">
+      <button type="button" class="mobile-filters-toggle" id="mobileFiltersToggle">Show Filters</button>
+      <div class="controls" id="filtersPanel">
         <div>
           <label for="searchInput">Search weapon</label>
           <input id="searchInput" placeholder="Search by weapon name">
@@ -326,19 +605,14 @@ button.secondary {
 
     <div class="panel section">
       <h2>Weapon Details</h2>
-      <div class="tiny" id="liveStatus" style="margin-bottom:10px;"></div>
-      <div id="details"></div>
+            <div id="details"></div>
     </div>
-  </div>
-</div>
-</div>
-
   </div>
 </div>
 
 <script>
 const embeddedRawData = [{"weapon": "Advanced Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "AP Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Assault Rifle", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "Assault Rifle Mk II", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["7.62"]}, {"weapon": "Assault Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Assault SMG", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Battle Rifle", "ammo": "7.62", "attachments": ["Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": ["7.62"]}, {"weapon": "Bullpup Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Bullpup Rifle Mk II", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Medium Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["5.56"]}, {"weapon": "Bullpup Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "Grip", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Carbine Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Box Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Carbine Rifle Mk II", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["5.56"]}, {"weapon": "Ceramic Pistol", "ammo": "9MM", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Ceramic Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Combat MG", "ammo": "7.62", "attachments": ["Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope"], "ammoCompatibility": ["7.62"]}, {"weapon": "Combat MG Mk II", "ammo": "7.62", "attachments": ["Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Medium Scope", "Large Scope", "Split-End Muzzle Brake"], "ammoCompatibility": ["7.62"]}, {"weapon": "Combat PDW", "ammo": "9MM", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Medium Scope"], "ammoCompatibility": ["9MM"]}, {"weapon": "Combat Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Combat Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Compact Rifle", "ammo": "5.56", "attachments": ["Drum Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": ["5.56"]}, {"weapon": "Double Barrel Shotgun", "ammo": "12 Gauge", "attachments": ["AP Ammo Mod", "HP Ammo Mod"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Double-Action Revolver", "ammo": ".36 Revolver", "attachments": ["FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".36 Revolver"]}, {"weapon": "Grenade Launcher", "ammo": "Unknown", "attachments": ["Tactical Flashlight", "Grip", "Medium Scope"], "ammoCompatibility": []}, {"weapon": "Gusenberg Sweeper", "ammo": ".45 ACP", "attachments": ["Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Heavy Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Heavy Revolver", "ammo": ".44 Magnum", "attachments": ["FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".44 Magnum"]}, {"weapon": "Heavy Revolver Mk II", "ammo": ".44 Magnum", "attachments": ["Compact Flashlight", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope"], "ammoCompatibility": [".44 Magnum"]}, {"weapon": "Heavy Rifle", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "Heavy Shotgun", "ammo": "Unknown", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": []}, {"weapon": "Heavy Sniper", "ammo": "Unknown", "attachments": ["AP Ammo Mod", "FMJ Ammo Mod"], "ammoCompatibility": []}, {"weapon": "Heavy Sniper Mk II", "ammo": "Unknown", "attachments": ["Heavy Barrel", "Extended Clip", "AP Ammo Mod", "Bell-End Muzzle Brake"], "ammoCompatibility": []}, {"weapon": "Machine Pistol", "ammo": "9MM", "attachments": ["Drum Mag", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Marksman Rifle", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "Marksman Rifle Mk II", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["7.62"]}, {"weapon": "MG", "ammo": "7.62", "attachments": ["Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope"], "ammoCompatibility": ["7.62"]}, {"weapon": "Micro SMG", "ammo": ".45 ACP", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Regular Suppressor"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Military Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Mini SMG", "ammo": "9MM", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": ["9MM"]}, {"weapon": "Minigun", "ammo": "7.62", "attachments": [], "ammoCompatibility": ["7.62"]}, {"weapon": "Navy Revolver", "ammo": ".36 Revolver", "attachments": [], "ammoCompatibility": [".36 Revolver"]}, {"weapon": "Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Pistol .50", "ammo": ".50 AE", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Regular Suppressor"], "ammoCompatibility": [".50 AE"]}, {"weapon": "Pistol Mk II", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Mounted Holographic Sight", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Precision Rifle", "ammo": "Unknown", "attachments": ["AP Ammo Mod", "FMJ Ammo Mod"], "ammoCompatibility": []}, {"weapon": "Pump Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Pump Shotgun Mk II", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "AP Ammo Mod", "HP Ammo Mod", "Holographic Sight", "Small Scope", "Medium Scope"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Sawed-Off Shotgun", "ammo": "12 Gauge", "attachments": ["AP Ammo Mod", "HP Ammo Mod"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Service Carbine", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "SMG", "ammo": "9MM", "attachments": ["Tactical Flashlight", "Drum Mag", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "SMG Mk II", "ammo": "9MM", "attachments": ["Tactical Flashlight", "Heavy Barrel", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Medium Scope", "Light Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["9MM"]}, {"weapon": "Smoke Grenade Launcher", "ammo": "Unknown", "attachments": ["Tactical Flashlight", "Grip", "Medium Scope"], "ammoCompatibility": []}, {"weapon": "Sniper Rifle", "ammo": "7.62", "attachments": ["AP Ammo Mod", "FMJ Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "SNS Pistol", "ammo": ".45 ACP", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "SNS Pistol Mk II", "ammo": ".45 ACP", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Mounted Holographic Sight", "Light Suppressor"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Special Carbine", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Special Carbine Mk II", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["5.56"]}, {"weapon": "Sweeper Shotgun", "ammo": "12 Gauge", "attachments": ["AP Ammo Mod", "HP Ammo Mod"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Tactical SMG", "ammo": ".45 ACP", "attachments": ["Extended Clip", "Small Scope", "Regular Suppressor"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Vintage Pistol", "ammo": "9MM", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "WM 29 Pistol", "ammo": "9MM", "attachments": ["Ceramic Suppressor"], "ammoCompatibility": ["9MM"]}];
-const LIVE_SHEET_URL = "https://docs.google.com/spreadsheets/d/169au1CYKvIX6MDjQkNS9hgp1zDTNHVtfzezoUMujthg/export?format=xlsx&gid=1054365570";
+const LIVE_SHEET_URL = "https://docs.google.com/spreadsheets/d/169au1CYKvIX6MDjQkNS9hgp1zDTNHVtfzezoUMujthg/export?format=csv&gid=1054365570";
 const embeddedMeta = {"kept_rows": 59, "dropped_rows": 4, "dropped_examples": [{"weapon": "", "ammo": ""}, {"weapon": "Notes", "ammo": ""}, {"weapon": "A:AE is the public chart. Hidden AF:AM helper columns determine the ammo label.", "ammo": ""}, {"weapon": "Formulas normalize header quotes and extra spaces so the chart keeps working even if source headers vary slightly.", "ammo": ""}], "weapon_col": "List", "ammo_col": "Ammo", "ammo_flag_cols": ["7.62", ".50 AE", "5.56", ".36 Revolver", ".44 Magnum", ".45 ACP", "12 Gauge", "9MM"]};
 let rawData = [...embeddedRawData];
 let data = [...embeddedRawData];
@@ -350,12 +624,12 @@ const els = {
   ammoFilter: document.getElementById("ammoFilter"),
   attachmentFilter: document.getElementById("attachmentFilter"),
   weaponList: document.getElementById("weaponList"),
-  details: document.getElementById("details"),  resultsCount: document.getElementById("resultsCount"),
+  details: document.getElementById("details"),
+  resultsCount: document.getElementById("resultsCount"),
   statWeapons: document.getElementById("statWeapons"),
   statAmmo: document.getElementById("statAmmo"),
-  statAttachments: document.getElementById("statAttachments"),  liveStatus: document.getElementById("liveStatus"),
-  ammoFilter: document.getElementById("ammoFilter"),
-  attachmentFilter: document.getElementById("attachmentFilter")
+  statAttachments: document.getElementById("statAttachments"),
+  liveStatus: document.getElementById("liveStatus")
 };
 
 function escapeHtml(str) {
@@ -525,6 +799,24 @@ function renderWeaponList() {
       selectedWeapon = card.dataset.weapon;
       renderWeaponList();
       renderDetails();
+
+      const isCompactLayout = window.innerWidth <= 900;
+      if (isCompactLayout) {
+        const detailsSection = document.getElementById("details");
+        if (detailsSection) {
+          detailsSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+          });
+        }
+      }
+
+      const activeCard = document.querySelector(`.weapon-card[data-weapon="${CSS.escape(selectedWeapon)}"]`);
+      if (activeCard) {
+        activeCard.classList.remove("flash-selected");
+        void activeCard.offsetWidth;
+        activeCard.classList.add("flash-selected");
+      }
     });
   });
 }
@@ -557,7 +849,7 @@ function renderDetails() {
     </div>
 
     <div class="block">
-      <h3>Related Weapons using ${item.ammo} Ammo</h3>
+      <h3>Weapons using ${item.ammo}</h3>
       ${
         related.length
         ? `<div class="chips">${related.map(r => `<button class="pill related-weapon-pill ${r.weapon === selectedWeapon ? "active" : ""}" type="button" data-weapon="${escapeHtml(r.weapon)}">${escapeHtml(r.weapon)}</button>`).join("")}</div>`
@@ -610,7 +902,7 @@ async function loadLiveData() {
     const res = await fetch(LIVE_SHEET_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buffer = await res.arrayBuffer();
-    const rows = await readWorkbookFromArrayBuffer(buffer, "xlsx");
+    const rows = await readWorkbookFromArrayBuffer(buffer, "csv");
     const parsed = parseRowsToData(rows);
 
     if (!parsed.data.length) {
@@ -635,9 +927,7 @@ async function loadLiveData() {
 
     refreshAll();
 
-    if (els.liveStatus) {
-      els.liveStatus.textContent = "Could not load the live Google Sheet, so the page is showing the embedded backup data instead.";
-    }
+    // Live fallback remains silent in the UI.
     console.error("Live sheet load failed:", err);
   }
 }
@@ -654,6 +944,38 @@ els.attachmentFilter.addEventListener("change", () => {
   renderWeaponList();
   renderDetails();
 });
+
+const mobileFiltersToggle = document.getElementById("mobileFiltersToggle");
+const filtersPanel = document.getElementById("filtersPanel");
+
+function syncMobileFiltersState() {
+  if (!mobileFiltersToggle || !filtersPanel) return;
+  const isMobile = window.innerWidth <= 600;
+  if (isMobile) {
+    if (!filtersPanel.classList.contains("collapsed")) {
+      mobileFiltersToggle.textContent = "Hide Filters";
+    } else {
+      mobileFiltersToggle.textContent = "Show Filters";
+    }
+  } else {
+    filtersPanel.classList.remove("collapsed");
+    mobileFiltersToggle.textContent = "Hide Filters";
+  }
+}
+
+if (mobileFiltersToggle && filtersPanel) {
+  if (window.innerWidth <= 600) {
+    filtersPanel.classList.add("collapsed");
+    mobileFiltersToggle.textContent = "Show Filters";
+  }
+
+  mobileFiltersToggle.addEventListener("click", () => {
+    filtersPanel.classList.toggle("collapsed");
+    syncMobileFiltersState();
+  });
+
+  window.addEventListener("resize", syncMobileFiltersState);
+}
 
 loadLiveData();</script>
 </body>
