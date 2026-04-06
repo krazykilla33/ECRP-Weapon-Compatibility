@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weapon Compatibility Explorer</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #08111f;
+  --bg2: #0d1729;
+  --panel: rgba(12, 20, 35, .9);
+  --panel2: rgba(16, 27, 48, .92);
+  --border: rgba(120, 155, 210, .22);
+  --text: #eaf2ff;
+  --muted: #98abc7;
+  --accent: #38bdf8;
+  --accent2: #22d3ee;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --radius: 22px;
+  --shadow: 0 20px 70px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(56,189,248,.10), transparent 25%),
+    radial-gradient(circle at top right, rgba(34,211,238,.08), transparent 25%),
+    linear-gradient(180deg, #07101d, #09111f 35%, #0b1220 100%);
+}
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hero {
+  display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; margin-bottom:16px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+.hero-main { padding: 26px; }
+.badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:999px;
+  border:1px solid rgba(56,189,248,.22); background: rgba(56,189,248,.09);
+  color:#cceeff; font-size:12px; text-transform:uppercase; letter-spacing:.05em;
+}
+h1 { margin: 14px 0 10px; font-size: clamp(2rem, 4vw, 3.15rem); line-height:1.04; letter-spacing:-.03em; }
+p { color: var(--muted); line-height:1.6; }
+.stats { display:grid; grid-template-columns: repeat(4,1fr); gap:12px; padding:16px; }
+.stat { background: var(--panel2); border:1px solid var(--border); border-radius:18px; padding:15px; }
+.stat .k { font-size:.82rem; color:var(--muted); margin-bottom:8px; }
+.stat .v { font-size:1.75rem; font-weight:700; letter-spacing:-.03em; }
+.grid > .panel.section:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid { display:grid; grid-template-columns: 360px 1fr 340px; gap:16px; }
+.section { padding:18px; }
+.panel.section { min-height: 0; }
+.section h2 { margin:0 0 10px; font-size:1rem; }
+.controls { display:grid; gap:10px; }
+label { display:block; font-size:.84rem; color:var(--muted); margin-bottom:4px; }
+input, select, button, textarea {
+  width:100%; border-radius:14px; border:1px solid var(--border);
+  background:#0d1729; color:var(--text); padding:10px 12px; font-size:.95rem;
+}
+button {
+  cursor:pointer; background:linear-gradient(180deg, rgba(56,189,248,.22), rgba(34,211,238,.16));
+  border-color: rgba(56,189,248,.34); font-weight:600;
+}
+button.secondary {
+  background: rgba(255,255,255,.03);
+}
+.helper { color:var(--muted); font-size:.92rem; line-height:1.6; }
+.weapon-list {
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  margin-top: 6px;
+}
+.weapon-card {
+  padding:10px 12px; border-radius:16px; border:1px solid var(--border);
+  background:rgba(15,23,42,.76); cursor:pointer; transition:.18s ease;
+}
+.weapon-card:hover { transform:translateY(-1px); border-color:rgba(56,189,248,.34); }
+.weapon-card.active { border-color:rgba(34,211,238,.48); background:linear-gradient(180deg, rgba(18,33,58,.94), rgba(10,21,40,.96)); }
+.weapon-title { font-weight:700; margin-bottom:6px; }
+.meta { display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:.84rem; }
+.pill {
+  display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  border-radius:999px; padding:8px 10px; font-size:.82rem;
+  background:rgba(56,189,248,.11); border:1px solid rgba(56,189,248,.18); color:#dff4ff;
+}
+.block {
+  margin-top:16px; padding:16px; border-radius:18px;
+  background:rgba(15, 23, 42, .72); border:1px solid var(--border);
+}
+.block h3 { margin:0 0 12px; font-size:.95rem; }
+.chips { display:flex; flex-wrap:wrap; gap:8px; }
+.ammo-list { display:grid; gap:8px; }
+.ammo-item {
+  display:flex; justify-content:space-between; gap:8px; align-items:center;
+  border-radius:16px; border:1px solid var(--border); background:rgba(15,23,42,.72);
+  padding:12px 14px; cursor:pointer;
+}
+.ammo-item.active, .ammo-item:hover { border-color:rgba(52,211,153,.4); }
+.count {
+  color:#ccffe8; background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.22);
+  border-radius:999px; padding:4px 9px; font-size:.78rem;
+}
+.tiny { font-size:.82rem; color:var(--muted); }
+.source-grid { display:grid; gap:8px; }
+.two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:.8rem; color:#dbeafe; background:rgba(0,0,0,.2); padding:10px 12px; border-radius:12px; overflow:auto;
+}
+.success { color:#c7f9df; }
+.warn { color:#ffe6a7; }
+
+.hero-simple {
+  display:grid;
+  grid-template-columns: 1.2fr .9fr;
+  gap:14px;
+  margin-bottom:12px;
+  padding:20px 22px;
+}
+.hero-copy h1 {
+  margin:0 0 6px;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height:1.05;
+  letter-spacing:-.03em;
+}
+.hero-copy p {
+  margin:0;
+  max-width:720px;
+}
+.stats-simple {
+  padding:0;
+  align-self:center;
+}
+.grid > .panel.section:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns: 320px 1fr;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+.ammo-section-full {
+  padding:18px;
+}
+.weapon-list {
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  margin-top: 6px;
+}
+.weapon-card {
+  background:rgba(15,23,42,.62);
+}
+.weapon-card:not(.active) {
+  opacity:.88;
+}
+.weapon-card.active {
+  box-shadow: inset 0 0 0 1px rgba(34,211,238,.14);
+}
+#details .block {
+  padding:12px;
+  margin-top:10px;
+}
+.details-hero {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:start;
+}
+.details-title {
+  font-size:1.25rem;
+  font-weight:700;
+  letter-spacing:-.03em;
+}
+.simple-list {
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap:8px;
+}
+.simple-item {
+  border:1px solid var(--border);
+  background:rgba(56,189,248,.08);
+  border-radius:14px;
+  padding:8px 10px;
+  font-size:.84rem;
+  color:#dff4ff;
+}
+.ammo-list {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap:8px;
+}
+.empty-state {
+  padding:16px;
+  border:1px dashed var(--border);
+  border-radius:16px;
+  color:var(--muted);
+  background:rgba(255,255,255,.02);
+}
+@media (max-width:1100px) {
+  .hero-simple, .grid > .panel.section:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid { grid-template-columns:1fr; }
+  .weapon-list {
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  margin-top: 6px;
+}
+}
+@media (max-width:700px) {
+  .simple-list { grid-template-columns:1fr; }
+}
+
+@media (max-width:1100px) {
+  .hero, .grid > .panel.section:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid { grid-template-columns:1fr; }
+  .stats { grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:700px) {
+  .wrap { padding:16px; }
+  .stats { grid-template-columns:1fr; }
+  .two { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  
+  <div class="hero-simple panel">
+    <div class="hero-copy">
+      <h1>Weapon Compatibility Explorer</h1>
+      <p>Search for a weapon, filter by ammo or attachment, and browse compatibility details.</p>
+    </div>
+    <div class="stats stats-simple">
+      <div class="stat"><div class="k">Weapons</div><div class="v" id="statWeapons">0</div></div>
+      <div class="stat"><div class="k">Ammo Types</div><div class="v" id="statAmmo">0</div></div>
+      <div class="stat"><div class="k">Attachment Types</div><div class="v" id="statAttachments">0</div></div>
+    </div>
+  </div>
+
+  
+  <div class="grid">
+    <div class="panel section">
+      <h2>Find a Weapon</h2>
+      <div class="controls">
+        <div>
+          <label for="searchInput">Search weapon</label>
+          <input id="searchInput" placeholder="Search by weapon name">
+        </div>
+        <div>
+          <label for="ammoFilter">Ammo filter</label>
+          <select id="ammoFilter"></select>
+        </div>
+        <div>
+          <label for="attachmentFilter">Attachment filter</label>
+          <select id="attachmentFilter"></select>
+        </div>
+      </div>
+      <div class="tiny" id="resultsCount" style="margin-top:10px;"></div>
+      <div class="weapon-list" id="weaponList"></div>
+    </div>
+
+    <div class="panel section">
+      <h2>Weapon Details</h2>
+      <div class="tiny" id="liveStatus" style="margin-bottom:10px;"></div>
+      <div id="details"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+  </div>
+</div>
+
+<script>
+const embeddedRawData = [{"weapon": "Advanced Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "AP Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Assault Rifle", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "Assault Rifle Mk II", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["7.62"]}, {"weapon": "Assault Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Assault SMG", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Battle Rifle", "ammo": "7.62", "attachments": ["Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": ["7.62"]}, {"weapon": "Bullpup Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Bullpup Rifle Mk II", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Medium Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["5.56"]}, {"weapon": "Bullpup Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "Grip", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Carbine Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Box Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Carbine Rifle Mk II", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["5.56"]}, {"weapon": "Ceramic Pistol", "ammo": "9MM", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Ceramic Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Combat MG", "ammo": "7.62", "attachments": ["Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope"], "ammoCompatibility": ["7.62"]}, {"weapon": "Combat MG Mk II", "ammo": "7.62", "attachments": ["Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Medium Scope", "Large Scope", "Split-End Muzzle Brake"], "ammoCompatibility": ["7.62"]}, {"weapon": "Combat PDW", "ammo": "9MM", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Medium Scope"], "ammoCompatibility": ["9MM"]}, {"weapon": "Combat Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Combat Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Compact Rifle", "ammo": "5.56", "attachments": ["Drum Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": ["5.56"]}, {"weapon": "Double Barrel Shotgun", "ammo": "12 Gauge", "attachments": ["AP Ammo Mod", "HP Ammo Mod"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Double-Action Revolver", "ammo": ".36 Revolver", "attachments": ["FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".36 Revolver"]}, {"weapon": "Grenade Launcher", "ammo": "Unknown", "attachments": ["Tactical Flashlight", "Grip", "Medium Scope"], "ammoCompatibility": []}, {"weapon": "Gusenberg Sweeper", "ammo": ".45 ACP", "attachments": ["Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Heavy Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Heavy Revolver", "ammo": ".44 Magnum", "attachments": ["FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".44 Magnum"]}, {"weapon": "Heavy Revolver Mk II", "ammo": ".44 Magnum", "attachments": ["Compact Flashlight", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope"], "ammoCompatibility": [".44 Magnum"]}, {"weapon": "Heavy Rifle", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "Heavy Shotgun", "ammo": "Unknown", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": []}, {"weapon": "Heavy Sniper", "ammo": "Unknown", "attachments": ["AP Ammo Mod", "FMJ Ammo Mod"], "ammoCompatibility": []}, {"weapon": "Heavy Sniper Mk II", "ammo": "Unknown", "attachments": ["Heavy Barrel", "Extended Clip", "AP Ammo Mod", "Bell-End Muzzle Brake"], "ammoCompatibility": []}, {"weapon": "Machine Pistol", "ammo": "9MM", "attachments": ["Drum Mag", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Marksman Rifle", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "Marksman Rifle Mk II", "ammo": "7.62", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["7.62"]}, {"weapon": "MG", "ammo": "7.62", "attachments": ["Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope"], "ammoCompatibility": ["7.62"]}, {"weapon": "Micro SMG", "ammo": ".45 ACP", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Regular Suppressor"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Military Rifle", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Medium Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Mini SMG", "ammo": "9MM", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": ["9MM"]}, {"weapon": "Minigun", "ammo": "7.62", "attachments": [], "ammoCompatibility": ["7.62"]}, {"weapon": "Navy Revolver", "ammo": ".36 Revolver", "attachments": [], "ammoCompatibility": [".36 Revolver"]}, {"weapon": "Pistol", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Pistol .50", "ammo": ".50 AE", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Regular Suppressor"], "ammoCompatibility": [".50 AE"]}, {"weapon": "Pistol Mk II", "ammo": "9MM", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Mounted Holographic Sight", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "Precision Rifle", "ammo": "Unknown", "attachments": ["AP Ammo Mod", "FMJ Ammo Mod"], "ammoCompatibility": []}, {"weapon": "Pump Shotgun", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "AP Ammo Mod", "HP Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Pump Shotgun Mk II", "ammo": "12 Gauge", "attachments": ["Tactical Flashlight", "AP Ammo Mod", "HP Ammo Mod", "Holographic Sight", "Small Scope", "Medium Scope"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Sawed-Off Shotgun", "ammo": "12 Gauge", "attachments": ["AP Ammo Mod", "HP Ammo Mod"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Service Carbine", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "SMG", "ammo": "9MM", "attachments": ["Tactical Flashlight", "Drum Mag", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Small Scope", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "SMG Mk II", "ammo": "9MM", "attachments": ["Tactical Flashlight", "Heavy Barrel", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Medium Scope", "Light Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["9MM"]}, {"weapon": "Smoke Grenade Launcher", "ammo": "Unknown", "attachments": ["Tactical Flashlight", "Grip", "Medium Scope"], "ammoCompatibility": []}, {"weapon": "Sniper Rifle", "ammo": "7.62", "attachments": ["AP Ammo Mod", "FMJ Ammo Mod", "Regular Suppressor"], "ammoCompatibility": ["7.62"]}, {"weapon": "SNS Pistol", "ammo": ".45 ACP", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "SNS Pistol Mk II", "ammo": ".45 ACP", "attachments": ["Compact Flashlight", "Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Mounted Holographic Sight", "Light Suppressor"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Special Carbine", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Drum Mag", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Large Scope", "Regular Suppressor"], "ammoCompatibility": ["5.56"]}, {"weapon": "Special Carbine Mk II", "ammo": "5.56", "attachments": ["Tactical Flashlight", "Grip", "Heavy Barrel", "Extended Clip", "AP Ammo Mod", "FMJ Ammo Mod", "Tracer Ammo Mod", "Holographic Sight", "Small Scope", "Large Scope", "Regular Suppressor", "Split-End Muzzle Brake"], "ammoCompatibility": ["5.56"]}, {"weapon": "Sweeper Shotgun", "ammo": "12 Gauge", "attachments": ["AP Ammo Mod", "HP Ammo Mod"], "ammoCompatibility": ["12 Gauge"]}, {"weapon": "Tactical SMG", "ammo": ".45 ACP", "attachments": ["Extended Clip", "Small Scope", "Regular Suppressor"], "ammoCompatibility": [".45 ACP"]}, {"weapon": "Vintage Pistol", "ammo": "9MM", "attachments": ["Extended Clip", "FMJ Ammo Mod", "HP Ammo Mod", "Tracer Ammo Mod", "Light Suppressor"], "ammoCompatibility": ["9MM"]}, {"weapon": "WM 29 Pistol", "ammo": "9MM", "attachments": ["Ceramic Suppressor"], "ammoCompatibility": ["9MM"]}];
+const LIVE_SHEET_URL = "https://docs.google.com/spreadsheets/d/169au1CYKvIX6MDjQkNS9hgp1zDTNHVtfzezoUMujthg/export?format=xlsx&gid=1054365570";
+const embeddedMeta = {"kept_rows": 59, "dropped_rows": 4, "dropped_examples": [{"weapon": "", "ammo": ""}, {"weapon": "Notes", "ammo": ""}, {"weapon": "A:AE is the public chart. Hidden AF:AM helper columns determine the ammo label.", "ammo": ""}, {"weapon": "Formulas normalize header quotes and extra spaces so the chart keeps working even if source headers vary slightly.", "ammo": ""}], "weapon_col": "List", "ammo_col": "Ammo", "ammo_flag_cols": ["7.62", ".50 AE", "5.56", ".36 Revolver", ".44 Magnum", ".45 ACP", "12 Gauge", "9MM"]};
+let rawData = [...embeddedRawData];
+let data = [...embeddedRawData];
+let selectedWeapon = data[0]?.weapon || null;
+let droppedCount = embeddedMeta.dropped_rows || 0;
+
+const els = {
+  searchInput: document.getElementById("searchInput"),
+  ammoFilter: document.getElementById("ammoFilter"),
+  attachmentFilter: document.getElementById("attachmentFilter"),
+  weaponList: document.getElementById("weaponList"),
+  details: document.getElementById("details"),  resultsCount: document.getElementById("resultsCount"),
+  statWeapons: document.getElementById("statWeapons"),
+  statAmmo: document.getElementById("statAmmo"),
+  statAttachments: document.getElementById("statAttachments"),  liveStatus: document.getElementById("liveStatus"),
+  ammoFilter: document.getElementById("ammoFilter"),
+  attachmentFilter: document.getElementById("attachmentFilter")
+};
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function isTrueish(v) {
+  if (v === true) return true;
+  if (typeof v === "number") return v !== 0;
+  if (v == null) return false;
+  const s = String(v).trim().toLowerCase();
+  return ["true", "yes", "y", "1", "x"].includes(s);
+}
+
+function norm(v) {
+  if (v == null) return "";
+  const s = String(v).trim();
+  return s.toLowerCase() === "nan" ? "" : s;
+}
+
+function detectColumns(rows) {
+  const headers = rows[0] || [];
+  const lower = headers.map(h => String(h).trim().toLowerCase());
+  let weaponIdx = lower.findIndex(h => ["list","weapon","name","gun"].includes(h));
+  if (weaponIdx === -1) weaponIdx = 0;
+  let ammoIdx = lower.findIndex(h => ["ammo","ammo label","ammolabel","caliber","calibre"].includes(h));
+
+  const ammoRegex = /(9mm|5\.56|7\.62|\.50\s*ae|\.45\s*acp|\.44\s*magnum|\.36\s*revolver|12\s*gauge)/i;
+  const ammoFlagIdxs = [];
+  headers.forEach((h, i) => {
+    if (i === ammoIdx) return;
+    const name = String(h).trim();
+    if (!ammoRegex.test(name)) return;
+    const sample = rows.slice(1);
+    let boolish = 0;
+    sample.forEach(r => {
+      const v = r[i];
+      const s = norm(v).toLowerCase();
+      if (isTrueish(v) || ["false","0",""].includes(s) || v == null) boolish++;
+    });
+    if (sample.length === 0 || (boolish / sample.length) > 0.8) ammoFlagIdxs.push(i);
+  });
+
+  const exclude = new Set([weaponIdx]);
+  if (ammoIdx !== -1) exclude.add(ammoIdx);
+  ammoFlagIdxs.forEach(i => exclude.add(i));
+  const attachmentIdxs = headers.map((_, i) => i).filter(i => !exclude.has(i));
+
+  return { headers, weaponIdx, ammoIdx, ammoFlagIdxs, attachmentIdxs };
+}
+
+function looksLikeNoteRow(weapon, ammo, attachments) {
+  const w = norm(weapon);
+  const a = norm(ammo);
+  const wl = w.toLowerCase();
+  const markers = [
+    "notes", "public chart", "helper columns", "determine the ammo label",
+    "formulas normalize", "source headers vary", "chart keeps working", "hidden"
+  ];
+  if (!w && !a && attachments.length === 0) return true;
+  if (wl === "nan" || wl === "notes") return true;
+  if (markers.some(m => wl.includes(m))) return true;
+  if (w.length > 60 && !a) return true;
+  return false;
+}
+
+function parseRowsToData(rows) {
+  const info = detectColumns(rows);
+  const out = [];
+  let removed = 0;
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const weapon = norm(row[info.weaponIdx]);
+    let ammo = info.ammoIdx !== -1 ? norm(row[info.ammoIdx]) : "";
+    const attachments = info.attachmentIdxs
+      .filter(i => isTrueish(row[i]))
+      .map(i => String(info.headers[i]).trim());
+
+    const ammoCompatibility = info.ammoFlagIdxs
+      .filter(i => isTrueish(row[i]))
+      .map(i => String(info.headers[i]).trim());
+
+    if (!ammo && ammoCompatibility.length) ammo = ammoCompatibility[0];
+    if (looksLikeNoteRow(weapon, ammo, attachments)) {
+      removed++;
+      continue;
+    }
+    if (!weapon) {
+      removed++;
+      continue;
+    }
+
+    out.push({
+      weapon,
+      ammo: ammo || "Unknown",
+      attachments,
+      ammoCompatibility
+    });
+  }
+
+  out.sort((a, b) => a.weapon.localeCompare(b.weapon));
+  return { data: out, removed, info };
+}
+
+function fillSelect(select, items, placeholder) {
+  select.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = placeholder;
+  select.appendChild(first);
+  items.forEach(item => {
+    const opt = document.createElement("option");
+    opt.value = item;
+    opt.textContent = item;
+    select.appendChild(opt);
+  });
+}
+
+function currentAmmoTypes() {
+  return [...new Set(data.map(x => x.ammo))].sort((a, b) => a.localeCompare(b));
+}
+
+function currentAttachmentTypes() {
+  return [...new Set(data.flatMap(x => x.attachments))].sort((a, b) => a.localeCompare(b));
+}
+
+function getFilteredData() {
+  const q = els.searchInput.value.trim().toLowerCase();
+  const ammo = els.ammoFilter.value;
+  const attachment = els.attachmentFilter.value;
+  return data.filter(item => {
+    const matchesSearch = !q || item.weapon.toLowerCase().includes(q);
+    const matchesAmmo = !ammo || item.ammo === ammo;
+    const matchesAttachment = !attachment || item.attachments.includes(attachment);
+    return matchesSearch && matchesAmmo && matchesAttachment;
+  });
+}
+
+function renderStats() {
+  els.statWeapons.textContent = data.length;
+  els.statAmmo.textContent = currentAmmoTypes().length;
+  els.statAttachments.textContent = currentAttachmentTypes().length;
+}
+
+function renderWeaponList() {
+  const filtered = getFilteredData();
+  if (!filtered.some(x => x.weapon === selectedWeapon)) selectedWeapon = filtered[0]?.weapon || null;
+  els.resultsCount.textContent = `${filtered.length} weapon${filtered.length === 1 ? "" : "s"} shown`;
+
+  els.weaponList.innerHTML = filtered.length ? filtered.map(item => `
+    <div class="weapon-card ${item.weapon === selectedWeapon ? "active" : ""}" data-weapon="${escapeHtml(item.weapon)}">
+      <div class="weapon-title">${escapeHtml(item.weapon)}</div>
+      <div class="meta">
+        <span class="pill">${escapeHtml(item.ammo)}</span>
+        <span>${item.attachments.length} Attachments.</span>
+      </div>
+    </div>
+  `).join("") : `<div class="empty-state">No weapons match the current filters.</div>`;
+
+  document.querySelectorAll(".weapon-card").forEach(card => {
+    card.addEventListener("click", () => {
+      selectedWeapon = card.dataset.weapon;
+      renderWeaponList();
+      renderDetails();
+    });
+  });
+}
+
+function renderDetails() {
+  const item = data.find(x => x.weapon === selectedWeapon);
+  if (!item) {
+    els.details.innerHTML = `<div class="empty-state">Search or pick a weapon to view ammo, attachments, and related weapons.</div>`;
+    return;
+  }
+
+  const related = data.filter(x => x.ammo === item.ammo && x.weapon !== item.weapon);
+
+  els.details.innerHTML = `
+    <div class="details-hero">
+      <div>
+        <div class="details-title">${escapeHtml(item.weapon)}</div>
+        <div class="tiny" style="margin-top:4px;">Uses ammo: <strong>${escapeHtml(item.ammo)}</strong></div>
+      </div>
+      <div class="pill">${item.attachments.length} attachments</div>
+    </div>
+
+    <div class="block">
+      <h3>Attachments</h3>
+      ${
+        item.attachments.length
+        ? `<div class="simple-list">${item.attachments.map(a => `<div class="simple-item">${escapeHtml(a)}</div>`).join("")}</div>`
+        : `<div class="helper">No attachments listed for this weapon.</div>`
+      }
+    </div>
+
+    <div class="block">
+      <h3>Related weapons</h3>
+      ${
+        related.length
+        ? `<div class="chips">${related.map(r => `<span class="pill">${escapeHtml(r.weapon)}</span>`).join("")}</div>`
+        : `<div class="helper">No other weapons are currently using this ammo in the loaded data.</div>`
+      }
+    </div>
+  `;
+}
+
+function refreshAll() {
+  fillSelect(els.ammoFilter, currentAmmoTypes(), "All ammo types");
+  fillSelect(els.attachmentFilter, currentAttachmentTypes(), "All attachment types");
+  renderStats();
+  renderWeaponList();
+  renderDetails();
+}
+
+async function readWorkbookFromArrayBuffer(buffer, extHint="xlsx") {
+  let wb;
+  if (extHint === "csv" || extHint === "tsv") {
+    const text = new TextDecoder().decode(buffer);
+    wb = XLSX.read(text, { type: "string", FS: extHint === "tsv" ? "\t" : "," });
+  } else {
+    wb = XLSX.read(buffer, { type: "array" });
+  }
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+}
+
+async function loadLiveData() {
+  if (els.liveStatus) {
+    els.liveStatus.textContent = "Loading live spreadsheet data...";
+  }
+
+  try {
+    const res = await fetch(LIVE_SHEET_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    const rows = await readWorkbookFromArrayBuffer(buffer, "xlsx");
+    const parsed = parseRowsToData(rows);
+
+    if (!parsed.data.length) {
+      throw new Error("No valid rows found in live sheet");
+    }
+
+    rawData = parsed.data;
+    data = parsed.data;
+    droppedCount = parsed.removed;
+    selectedWeapon = data[0]?.weapon || null;
+
+    refreshAll();
+
+    if (els.liveStatus) {
+      els.liveStatus.textContent = `Live data loaded from Google Sheets. ${parsed.data.length} weapons loaded; ${parsed.removed} bad row${parsed.removed === 1 ? "" : "s"} cleaned automatically.`;
+    }
+  } catch (err) {
+    rawData = [...embeddedRawData];
+    data = [...embeddedRawData];
+    droppedCount = embeddedMeta.dropped_rows || 0;
+    selectedWeapon = data[0]?.weapon || null;
+
+    refreshAll();
+
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Could not load the live Google Sheet, so the page is showing the embedded backup data instead.";
+    }
+    console.error("Live sheet load failed:", err);
+  }
+}
+
+els.searchInput.addEventListener("input", () => {
+  renderWeaponList();
+  renderDetails();
+});
+els.ammoFilter.addEventListener("change", () => {
+  renderWeaponList();
+  renderDetails();
+});
+els.attachmentFilter.addEventListener("change", () => {
+  renderWeaponList();
+  renderDetails();
+});
+
+loadLiveData();</script>
+</body>
+</html>
