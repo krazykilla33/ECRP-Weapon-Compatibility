@@ -113,6 +113,24 @@ button.secondary {
   border-radius:999px; padding:8px 10px; font-size:.82rem;
   background:rgba(56,189,248,.11); border:1px solid rgba(56,189,248,.18); color:#dff4ff;
 }
+.related-weapon-pill {
+  display: inline-flex;
+  width: auto;
+  max-width: max-content;
+  cursor: pointer;
+  font: inherit;
+  flex: 0 0 auto;
+}
+.related-weapon-pill:hover {
+  border-color: rgba(56,189,248,.36);
+  background: rgba(56,189,248,.18);
+  transform: translateY(-1px);
+}
+.related-weapon-pill.active {
+  border-color: rgba(34,211,238,.52);
+  background: linear-gradient(180deg, rgba(18,33,58,.94), rgba(10,21,40,.96));
+  box-shadow: inset 0 0 0 1px rgba(34,211,238,.14);
+}
 .block {
   margin-top:16px; padding:16px; border-radius:18px;
   background:rgba(15, 23, 42, .72); border:1px solid var(--border);
@@ -542,11 +560,24 @@ function renderDetails() {
       <h3>Related Weapons using ${item.ammo} Ammo</h3>
       ${
         related.length
-        ? `<div class="chips">${related.map(r => `<span class="pill">${escapeHtml(r.weapon)}</span>`).join("")}</div>`
+        ? `<div class="chips">${related.map(r => `<button class="pill related-weapon-pill ${r.weapon === selectedWeapon ? "active" : ""}" type="button" data-weapon="${escapeHtml(r.weapon)}">${escapeHtml(r.weapon)}</button>`).join("")}</div>`
         : `<div class="helper">No other weapons are currently using this ammo in the loaded data.</div>`
       }
     </div>
   `;
+
+  document.querySelectorAll(".related-weapon-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedWeapon = btn.dataset.weapon;
+      renderWeaponList();
+      renderDetails();
+
+      const activeCard = document.querySelector(`.weapon-card[data-weapon="${CSS.escape(selectedWeapon)}"]`);
+      if (activeCard) {
+        activeCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    });
+  });
 }
 
 function refreshAll() {
