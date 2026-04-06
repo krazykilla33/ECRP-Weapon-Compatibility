@@ -593,9 +593,9 @@ async function loadLiveData() {
 
     refreshAll();
 
-    if (els.liveStatus) {
-      els.liveStatus.textContent = `Live data loaded from Google Sheets. ${parsed.data.length} weapons loaded; ${parsed.removed} bad row${parsed.removed === 1 ? "" : "s"} cleaned automatically.`;
-    }
+    //if (els.liveStatus) {
+      //els.liveStatus.textContent = `Live data loaded from Google Sheets. ${parsed.data.length} weapons loaded; ${parsed.removed} bad row${parsed.removed === 1 ? "" : "s"} cleaned automatically.`;
+    //}
   } catch (err) {
     rawData = [...embeddedRawData];
     data = [...embeddedRawData];
