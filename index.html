@@ -849,7 +849,7 @@ function renderDetails() {
     </div>
 
     <div class="block">
-      <h3>Weapons using ${item.ammo}</h3>
+      <h3>Weapons using ${item.ammo} Ammo</h3>
       ${
         related.length
         ? `<div class="chips">${related.map(r => `<button class="pill related-weapon-pill ${r.weapon === selectedWeapon ? "active" : ""}" type="button" data-weapon="${escapeHtml(r.weapon)}">${escapeHtml(r.weapon)}</button>`).join("")}</div>`
